@@ -31,7 +31,7 @@ sub가 변경되면 자신에게 등록되어 있는 obj를 순회하면서 옵�
 - WeakReference : HasMap을 예를 들어, Map엔 들어있지만 참조 하지 않는 reference는 자동으로 삭제.  
   다만 임시적인 방법. 단점은 언제 없어질지 알수 없고 명시적으로 해제하는것이 맞다.
 - Java Observer Interface, Observerble class : 다만, Deprecated 됐다.
-- Flow API : Java 9에 처음 도입된 API : Java에서 reactive stream을 구현할수 있도록 도와주는 인터페이스 목록
+- [Flow API](https://devbksheen.tistory.com/entry/%EB%AA%A8%EB%8D%98-%EC%9E%90%EB%B0%94-%EB%A6%AC%EC%95%A1%ED%8B%B0%EB%B8%8C-%EC%8A%A4%ED%8A%B8%EB%A6%BC%EA%B3%BC-Flow-API%EB%9E%80) : Java 9에 처음 도입된 API : Java에서 reactive stream을 구현할수 있도록 도와주는 인터페이스 목록
 - SubmissionPublisher in Flow API : 비동기적으로 메시지를 처리할때 필요한 API  
   이 reactive stream API 목적중 하나가 비동기 처리하면서 백프레셔를 관리. 흐름의 양을 조절
 - Rx Java
