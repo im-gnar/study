@@ -60,7 +60,7 @@ public class FilterInputStream extends InputStream {
 |:--:|:--:|:--:|
 |공통점|	Interface 구현 구조로 이루어짐<br>Wrapper Class와 real class의 관계가 aggregation ( has A )관계|
 |차이점	|Wrapper Class와 Real Class의 관계가 런타임에 정해짐	| Wrapper Class와 Real Class의 관계가 컴파일타임에 정해짐|
-|사용 목적|runtime에 real Object에 기능을 확장하고 싶을 때 사용<br>기능 확장 관점|Real Object에 대해서 실제로 필요할 때 instance가 생성되고 작업이 진행될 수 있도록 하기 위해 적용<br>기능 제어, 접근 제어 관점|
+|사용 목적|runtime에 real Object에 기능을 확장하고 싶을 때 사용<br>기능 확장 관점|Real Object에 대해서 실제로 필요할 때 instance가 생성되고 작업이 진행될 수 있도록 하기 위해 적용<br>기능 제어, 접근 제어(controll) 관점|
 
 
 
