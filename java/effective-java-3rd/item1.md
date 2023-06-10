@@ -139,18 +139,28 @@ public class Car {
 
 > Ex. JDBC
 ```java
-Class.forName("oracle.jdbc.driver.OracleDriver"); 
-Connection conn = null; 
-conn = DriverManager.getConnection("jdbc:oracle:thin:@localhost:1521:ORA92", "scott", "tiger"); 
+public static JdbcSample {
+        /**
+         *  implements java.sql.Driver
+         *  java.sql.Driver: 서비스 제공자 인터페이스
+         *  com.mysql.cj.jdbc.Driver 는 이 인터페이스를 구현하여 제공자 등록 API 를 통해 등록되고 갈아끼워진다.
+         */
+        Driver driver = new Driver();
+        DriverManager.registerDriver(driver); // 제공자 등록 API
+        /** Class.forName("com.mysql.cj.jdbc.Driver") 을 통해 Driver 등록도 가능하다.
+         *  DriverManager 는 static 필드에서 Driver 를 등록받기 때문에
+         *  ClassLoader 수행 시 mysql Driver 를 주입받는다. 본 예제에서는 registerDriver API 를 사용한다.
+         */
+        Connection connection = DriverManager.getConnection("jdbc:mysql://127.0.0.1:3306/jdbc?serverTimezone=UTC", "root", "admin"); // 서비스 인터페이스
+        Statement statement = connection.createStatement();
+        ResultSet resultSet = statement.executeQuery("SELECT * FROM test");
+        while (resultSet.next()){
+            System.out.println(resultSet.getString(1));
+            System.out.println(resultSet.getString(2));
+        }
+    }
+}
 ```
-- DriverManager.registerDriver : 제공자 등록 API 역할 (oracle, mysql ...)
-- Connection  : 서비스 인터페이스 역할
-- DriverManager.getConnection  : 서비스 접근 API 역할
-- Driver : 서비스 제공자 인터페이스 역할
-
-서비스 프로바이더 프레임워크는 서비스의 구현체를 대표하는 서비스 인터페이스와 구현체를 등록하는데 사용하는 프로바이더 등록 API 그리고 클라이언트가 해당 서비스의 인스턴스를 가져갈 때 사용하는 서비스 엑세스 API가 필수로 필요하다.
-
-부가적으로, 서비스 인터페이스의 인스턴스를 제공하는 서비스 프로바이더 인터페이스를 만들 수도 있는데, 그게 없는 경우에는 리플랙션을 사용해서 구현체를 만들어 준다.
 
 ---
 
