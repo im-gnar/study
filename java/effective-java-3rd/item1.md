@@ -41,7 +41,7 @@ public class Person {
 
 Immutable class를 미리 만들어 반환하거나 캐싱하여 재사용하여 빌필요한 객체 생성을 줄일 수 있다. (Flyweight pattern)
 
-Boolean.TRUE & FALSE 가 예로 나왓는데, 고정적인 값을 사용하기 때문이면 enum 도 인가?
+> 메모리 최적화를 위한 불변객체 캐싱이면 enum 도 인가? <br> 맞는거같기도하고 ([Design patterns in Action: Flyweight and Enumerated types](https://blog.gougousis.net/design-patterns-in-action-flyweight-and-enumerated-types/))
 
 
 ```java
