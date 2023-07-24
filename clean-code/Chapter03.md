@@ -211,7 +211,7 @@ public void delete(Page page) {
 
 private void deletePageAndAllReferences(Page page) throws Exception {
     deletePage(page);
-	registry.deleteReference(page.name);
+    registry.deleteReference(page.name);
     configKeys.deleteKey(page.name.makeKey());
 }
 ```
