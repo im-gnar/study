@@ -147,7 +147,7 @@ public void appendFooter(StringBuffer report, String s) {}
 report.appendFooter(s);
 ```
 
-## 명령과 조회를 분리하라!
+## 명령과 조회를 분리하라
 
 - 함수는 뭔가를 수행하거나 뭔가에 답하거나 둘 중 하나만 해야 한다.
 
@@ -170,7 +170,7 @@ if(attributeExists("username")){
 }
 ```
 
-## 오류 코드보다 예외를 사용하라!
+## 오류 코드보다 예외를 사용하라
 
 - 오류 코드 반환은 자칫하면 if 문에서 명령을 표현식으로 사용하기 쉽다.
   > 정상 동작과 오류 처리 동작을 분리하면 코드를 이해하고 수정하기 쉬워진다.
@@ -220,7 +220,7 @@ private void deletePageAndAllReferences(Page page) throws Exception {
 - 오류처리도 하나의 작업이다.
 - Error ENUM 대신 Exception을 사용하자
 
-## 반복하지 마라!
+## 반복하지 마라
 
 - AOP(Aspect Oriented Programming), COP(Component Oriented Programming)처럼 중복 제거 전략을 사용하자
 
