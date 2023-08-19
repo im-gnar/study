@@ -249,4 +249,141 @@ Bank bank = (Bank) Proxy.newProxyInstance(
 - 또한 프록시는 진정한 AOP 해법에 필요한 'advice'를 명시하는 메커니즘도 제공하지 않는다.
 
 
+#### 순수 자바 AOP 프레임워크
 
+위 Java Proxy API의 단점들은 Spring, JBoss와 같은 순수 자바 AOP 프레임워크를 통해 해결할 수 있다.<br>
+Spring에서는 비지니스 로직을 POJO로 작성해 자신이 속한 도메인에 집중하게 한다.<br>
+결과적으로 의존성은 줄어들고 테스트 작성에 필요한 고민도 줄어든다.<br> 이러한 심플함은 user story의 구현과 유지보수, 확장 또한 간편하게 만들어 준다.
+
+```java
+<beans>
+    ...
+    <bean id="appDataSource"
+        class="org.apache.commons.dbcp.BasicDataSource"
+        destroy-method="close"
+        p:driverClassName="com.mysql.jdbc.Driver"
+        p:url="jdbc:mysql://localhost:3306/mydb"
+        p:username="me"/>
+    
+    <bean id="bankDataAccessObject"
+        class="com.example.banking.persistence.BankDataAccessObject"
+        p:dataSource-ref="appDataSource"/>
+    
+    <bean id="bank"
+        class="com.example.banking.model.Bank"
+        p:dataAccessObject-ref="bankDataAccessObject"/>
+    ...
+</beans>
+```
+
+![image](https://github.com/rachel5004/study/assets/75432228/90b1b633-fd96-416c-9802-bb32cdadc84b)
+
+Bank객체는 BankDataAccessObject가, BankDataAccessObject는 BankDataSource가 감싸 프록시하는 구조로 되어 각각의 bean들이 "러시안 인형"의 한 부분처럼 구성되었다. <br>
+클라이언트는 Bank에 접근하고 있다고 생각하지만 사실은 가장 바깥의 BankDataSource에 접근하고 있는 것이다.
+
+
+애플리케이션에서 DI 컨테이너에게 (XML 파일에 명시된) 시스템 내 최상위 객체를 요청하려면 다음 코드가 필요하다.
+```java
+XmlBeanFactory bf = new XmlBeanFactory(new ClassPathResource("app.xml", getClass()));
+Bank bank = (Bank) bf.getBean("bank");
+```
+
+- 스프링 관련 코드가 거의 필요 없으므로 사실상 프레임워크와 독립적인 애플리케이션을 구현할 수 있다.
+- XML은 장황하고 읽기 어렵지만, 이런 설정 파일에 명시된 '정책'이 자동으로 생성되는 프록시나 관점 논리보다는 단순하다.
+- EJB3은 xml와 Java5 annotation을 사용해 횡단 관심사를 선언적으로 지원하는 스프링 모델을 따른다.
+
+
+```JAVA
+// 목록 11-5 EJB3 Bank EJB
+package com.example.banking.model;
+
+import javax.persistence.*;
+import java.util.ArrayList;
+import java.util.Collection;
+
+@Entity
+@Table(name = "BANKS")
+public class Bank implements java.io.Serializable {
+    @Id @GeneratedValue(strategy=GenerationType.AUTO)
+    private int id;
+
+    @Embeddable // Bank의 데이터베이스 행에 인라인으로 포함된 객체
+    public class Address {
+        protected String streetAddr1;
+        protected String streetAddr2;
+        protected String city;
+        protected String state;
+        protected String zipCode;
+    }
+
+    @Embedded
+    private Address address;
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER, mappedBy="bank")
+    private Collection<Account> accounts = new ArrayList<Account>();
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public void addAccount(Account account) {
+        account.setBank(this);
+        accounts.add(account);
+    }
+
+    public Collection<Account> getAccounts() {
+        return accounts;
+    }
+
+    public void setAccounts(Collection<Account> accounts) {
+        this.accounts = accounts;
+    }
+}
+```
+
+
+#### AspectJ 관점
+
+- AOP를 실현하기 위한 가장 강력한 도구는 AspectJ 언어다.
+- 8~90%의 경우에는 Spring AOP와 JBoss AOP로도 충분하지만 AspectJ는 훨씬 강력한 수준의 AOP를 지원한다.
+- 다만 AspectJ 를 사용하기 위해 새로운 툴, 언어 구조, 관습적인 코드를 익혀야 한다는 단점도 존재한다.
+- 최근 나온 "annotation-form AspectJ"로 인해 그 부담은 많이 줄어들었다고 한다.
+
+### 테스트 주도 시스템 아키텍처 구축
+
+- 코드 수준에서 아키텍처 관심사를 분리할 수 있다면, 진정한 테스트 주도 아키텍처 구축이 가능해진다.
+- 처음에는 작고 간단한 구조에서 시작하지만 필요에 따라 새로운 기술을 추가해 정교한 아키텍처로 확장시킬 수 있다.
+
+> 최선의 시스템 구조는 각기 POJO (또는 다른) 객체로 구현되는 모듈화된 관심사 영역(도메인)으로 구성된다. 이렇게 서로 다른 영역은 해당 영역 코드에 최소한의 영향을 미치는 관점이나 유사한 도구를 사용해 통합한다. 이런 구조 역시 코드와 마찬가지로 테스트 주도 기법을 적용할 수 있다.
+
+### 의사 결정을 최적화하라
+
+- 모듈을 나누고 관심사를 분리하면 지엽적인 관리와 결정이 가능해진다.
+- 결정은 최대한 많은 정보가 모일 때까지 미루고 시기가 되었을 때 책임자(여기서는 사람이 아닌 모듈화된 컴포넌트를 뜻한다)에게 맡기는 것이 좋다
+
+> 관심사를 모듈로 분리한 POJO 시스템은 기민함을 제공한다. 이런 기민함 덕택에 최신 정보에 기반해 최선의 시점에 최적의 결정을 내리기가 쉬워진다. 또한 결정의 복잡성도 줄어든다.
+
+
+### 명백한 가치가 있을 때 표준을 현명하게 사용하라
+
+- 가볍고 간단한 설계로 충분했을 프로젝트에서도 단지 표준이라는 이유로 EJB2를 채택했다.
+- 표준에 집착하는 바람에 고객 가치가 뒷전으로 밀려날 수 있다.
+
+> 표준을 사용하면 아이디어와 컴포넌트를 재사용하기 쉽고, 적절한 경험을 가진 사람을 구하기 쉬우며, 좋은 아이디어를 캡슐화하기 쉽고, 컴포넌트를 엮기 쉽다. 하지만 때로는 표준을 만드는 시간이 너무 오래 걸려 업계가 기다리지 못한다. 어떤 표준은 원래 표준을 제정한 목적을 잊어버리기도 한다.
+
+
+### 시스템은 도메인 특화 언어가 필요하다
+
+- DSL(Domain-Specific Language, 도메인 특화 언어)은 간단한 스크립트 언어나 표준 언어로 구현한 API를 카리킨다.
+- 좋은 DSL은 도메인 개념과 그 개념을 구현한 코드 사이에 존재하는 '의사소통 간극'을 줄여준다.
+- DSL을 효율적으로 사용하면 코드 덩어리와 디자인 패턴의 추상도를 높여 주며 그에 따라 코드의 의도를 적절한 추상화 레벨에서 표현할 수 있게 해준다.
+
+> 도메인 특화 언어를 사용하면 고차원 정책에서 저차원 세부사항에 이르기까지 모든 추상화 수준과 모든 도메인을 POJO로 표현할 수 있다.
+
+
+### 결론
+- 깨끗하지 못한 아키텍처는 도메인 논리를 흐리며 기민성을 떨어뜨리므로 시스템 역시 깨끗해야 한다.\
+- 모든 추상화 단계에서 의도는 명확히 표현해야 한다. 그러려면 POJO를 작성하고 관점 혹은 관점과 유사한 메커니즘을 사용해 각 구현 관심사를 분리해야 한다.
+- 시스템을 설계하든 개별 모듈을 설계하든, 실제로 돌아가는 가장 단순한 수단을 사용해야 한다는 사실을 명심하자.
