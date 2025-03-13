@@ -113,5 +113,31 @@ struct IEEE754 {
 ---
 
 > [!Tip]
-> - 비트 연산자(&, |, ^, !) 활용
-> - 비트마스킹, 암호화 등 활용 사례
+> 비트 연산자(&, |, ^, !) 활용
+
+- 네트워크 TCP/IP 헤더 처리: 비트 마스킹(&)으로 플래그 필드 추출
+```c
+// TCP 헤더에서 SYN 플래그 확인
+bool isSYN = (tcp_header & 0x02) != 0;
+```
+- 네트워크 주소 계산: IP와 서브넷 마스크 AND 연산
+```python
+network_address = ip_address & subnet_mask #(255.255.255.0)
+```
+
+- 임베디드 / IoT 레지스터 제어: 특정 핀 설정/해제
+```c
+// LED 켜기 (3번 핀)
+PORTB |= (1 << 3);  // OR로 특정 비트만 1로 설정
+
+// LED 끄기
+PORTB &= ~(1 << 3); // AND와 NOT으로 특정 비트만 0으로
+```
+- 그래픽스/이미지 색상 처리: 비트 시프트와 마스킹으로 RGB 채널 조작
+
+```javascript
+// RGB 값에서 R,G,B 추출
+const r = (color >> 16) & 0xFF;
+const g = (color >> 8) & 0xFF;
+const b = color & 0xFF;
+```
