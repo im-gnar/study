@@ -6,10 +6,11 @@
 - 한 프로그램을 다른 프로그램으로 변경할 때 프로세스 컨텍스트를 저장, 복구해야 한다.
   - CPU 레지스터, MMU 레지스터, I/O 상태 등
 - 문맥 전환은 비용이 큼 (컨텍스트 저장, 커널 스택 포인터 변경, TLB 플러시, 스케줄러호출, IPC...)
-- 시스템 콜을 사용해 터미널에서 입력을 읽고 싶다는 의사 표시
-  - 그 결과로 사용자 프로그램은 sleep 상태가 되고 다른 동작을 수행할 수 있음
+- 사용자 프로그램이 입력 대기(read syscall) 중일 때, 입력이 없으면 CPU를 점유한 채 기다릴 수 없으므로 OS는 해당 프로세스를 sleep 시킴
+- 다른 실행 가능한 프로세스에게 CPU를 할당(스케줄링)하면서 컨텍스트 스위칭 발생
+
  
-터미널 장치 드라이버와 버퍼링
+#### 터미널 장치 드라이버와 버퍼링
 - 장치드라이버는 터미널에 들어오는 문자를 장치 드라이버는 입력 버퍼에 키 입력을 저장하고, 입력이 완료될 때(Enter)까지 대기
 - 동시에 출력 버퍼를 통해 사용자에게 echo(화면 표시)를 수행
 - 버퍼는 FIFO(큐) 구조
@@ -48,5 +49,51 @@
 - 런타임 라이브러리는 추가로 터미널 장치 드라이버와 연관된 파일을 하나는 입력을 위해, 다른 하나는 출력을 위해 연다.
 
 
-<img width="413" alt="image" src="https://github.com/user-attachments/assets/e99b6286-5dca-4c7f-8ada-ce59b7c32f29" />
+```mermaid
+sequenceDiagram
+    %% 사용자 레이어
+    participant Human as 사용자 (사람)
+    participant Keyboard as 키보드 디바이스
+
+    %% 사용자 공간
+    participant CProgram as C 프로그램 (fgets, printf)
+    participant Stdio as stdio 라이브러리
+    participant UserBuf as 사용자 공간 I/O 버퍼 (libc 내부 버퍼)
+
+    %% 커널 공간
+    participant Syscall as 시스템 콜 (read, write)
+    participant Kernel as 커널 (시스템콜 핸들러, 스케줄러)
+    participant TTY as 터미널 드라이버
+    participant TTYBuf as TTY 입력/출력 버퍼 (커널 공간)
+
+    %% 입출력 흐름
+    Human->>Keyboard: 타이핑
+    Keyboard-->>TTY: 인터럽트 (입력 발생)
+    TTY->>TTYBuf: 키 입력 저장 (입력 버퍼)
+    TTY->>TTYBuf: 에코 문자 저장 (출력 버퍼)
+    TTYBuf->>Keyboard: 디스플레이 출력
+
+    %% 사용자 프로그램 시작
+    CProgram->>Stdio: fgets(buf, 100, stdin) 호출
+    Stdio->>UserBuf: 버퍼링 대기 (Enter까지)
+    Note right of Stdio: 아직 시스템 콜 호출 없음
+
+    Stdio->>Syscall: read() 시스템 콜 호출
+    Syscall->>Kernel: 사용자 모드 → 커널 모드 전환<br>레지스터 저장 (커널 스택)
+    Kernel->>TTYBuf: 입력 버퍼에서 데이터 복사
+    Kernel->>Syscall: 사용자 공간으로 데이터 전달
+    Syscall-->>UserBuf: 사용자 버퍼로 복사
+    UserBuf-->>Stdio: fgets 결과 반환
+    Stdio-->>CProgram: fgets 결과 반환
+
+    CProgram->>Stdio: printf(buf) 호출
+    Stdio->>UserBuf: 버퍼에 출력 내용 저장
+    Stdio->>Syscall: write() 시스템 콜 호출
+    Syscall->>Kernel: 커널 진입
+    Kernel->>TTYBuf: 출력 버퍼에 데이터 전달
+    TTYBuf->>Keyboard: 출력 (화면 표시)
+
+
+```
+
 
